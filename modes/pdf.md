@@ -1,55 +1,101 @@
-# Modo: pdf — Generación de PDF ATS-Optimizado
+# Modo: pdf — Generación de PDF via LaTeX
 
 ## Pipeline completo
 
-1. Lee `cv.md` como fuentes de verdad
+1. Lee `cv.md` como fuente de verdad
 2. Pide al usuario el JD si no está en contexto (texto o URL)
 3. Extrae 15-20 keywords del JD
 4. Detecta idioma del JD → idioma del CV (EN default)
-5. Detecta ubicación empresa → formato papel:
-   - US/Canada → `letter`
-   - Resto del mundo → `a4`
-6. Detecta arquetipo del rol → adapta framing
-7. Reescribe Professional Summary inyectando keywords del JD + exit narrative bridge ("Built and sold a business. Now applying systems thinking to [domain del JD].")
-8. Selecciona top 3-4 proyectos más relevantes para la oferta
-9. Reordena bullets de experiencia por relevancia al JD
-10. Construye competency grid desde requisitos del JD (6-8 keyword phrases)
-11. Inyecta keywords naturalmente en logros existentes (NUNCA inventa)
-12. Genera HTML completo desde template + contenido personalizado
-13. Escribe HTML a `/tmp/cv-candidate-{company}.html`
-14. Ejecuta: `node generate-pdf.mjs /tmp/cv-candidate-{company}.html output/cv-candidate-{company}-{YYYY-MM-DD}.pdf --format={letter|a4}`
-15. Reporta: ruta del PDF, nº páginas, % cobertura de keywords
+5. Detecta arquetipo del rol → adapta framing
+6. Reescribe Profile inyectando keywords del JD + narrative bridge
+7. Selecciona top 3-4 proyectos más relevantes para la oferta
+8. Reordena bullets de experiencia por relevancia al JD
+9. Inyecta keywords naturalmente en logros existentes (NUNCA inventa)
+10. Genera JSON vars file con todo el contenido LaTeX
+11. Ejecuta: `node generate-pdf-latex.mjs cv output/cv-{candidate}-{company}-{YYYY-MM-DD}.pdf --vars-file=/tmp/cv-vars-{company}.json`
+12. Reporta: ruta del PDF, tamaño
+
+## Cover Letter (when needed)
+
+Generate a cover letter alongside the CV when:
+- The application form has a cover letter field
+- The user explicitly requests one
+- Score >= 4.0 (proactively offer)
+
+Pipeline:
+1. Generate tailored body text: opening paragraph + 3 bullet points + closing. 1 page max.
+2. Map JD requirements to proof points from cv.md
+3. Generate JSON vars file with cover letter content
+4. Ejecuta: `node generate-pdf-latex.mjs coverletter output/cl-{candidate}-{company}-{YYYY-MM-DD}.pdf --vars-file=/tmp/cl-vars-{company}.json`
+
+## LaTeX Templates
+
+Templates live in `templates/latex/`:
+
+| File | Purpose |
+|------|---------|
+| `resume.cls` | Document class (layout, fonts, environments) |
+| `cv-template.tex` | CV template with `<<PLACEHOLDER>>` tokens |
+| `coverletter.tex` | Cover letter template with `<<PLACEHOLDER>>` tokens |
+
+## CV Placeholders (vars JSON)
+
+| Placeholder | Content | Type |
+|-------------|---------|------|
+| `<<NAME>>` | Full name (UTF-8) | plain text |
+| `<<PHONE>>` | Display phone | plain text |
+| `<<PHONE_RAW>>` | Phone for tel: link | plain text |
+| `<<EMAIL>>` | Email address | plain text |
+| `<<GITHUB>>` | GitHub username | plain text |
+| `<<LINKEDIN>>` | LinkedIn username | plain text |
+| `<<PROFILE>>` | Tailored profile/summary paragraph | plain text |
+| `<<ACHIEVEMENTS_SECTION>>` | Full rSection block with achievements | raw LaTeX |
+| `<<EDUCATION_SECTION>>` | Full rSection block with education | raw LaTeX |
+| `<<EXPERIENCE_SECTION>>` | Full rSection block with experience | raw LaTeX |
+| `<<PROJECTS_SECTION>>` | Full rSection block with projects | raw LaTeX |
+| `<<SKILLS_SECTION>>` | Full rSection block with skills | raw LaTeX |
+
+**"raw LaTeX" fields** contain `\begin{rSection}`, `\begin{rSubsection}`, `\item`, `\textbf{}`, `\href{}{}`, etc. They are inserted as-is.
+
+**"plain text" fields** are auto-escaped by the script (special chars like `&`, `%`, `#` → `\&`, `\%`, `\#`). Use UTF-8 directly for accented characters (e.g., `Martínez`, not `Mart\'{i}nez`).
+
+## Cover Letter Placeholders (vars JSON)
+
+| Placeholder | Content | Type |
+|-------------|---------|------|
+| `<<NAME>>` | Full name (UTF-8) | plain text |
+| `<<PHONE>>` | Display phone | plain text |
+| `<<EMAIL>>` | Email address | plain text |
+| `<<GITHUB>>` | GitHub username | plain text |
+| `<<LINKEDIN>>` | LinkedIn username | plain text |
+| `<<COMPANY>>` | Company name | plain text |
+| `<<RECIPIENT>>` | Greeting recipient (e.g., "Hiring Team") | plain text |
+| `<<POSITION>>` | Exact position title | plain text |
+| `<<GREETING>>` | "Dear" / "Sehr geehrte(r)" / etc. | plain text |
+| `<<CLOSER>>` | "Kind Regards" / "Mit freundlichen Grüßen" / etc. | plain text |
+| `<<DATE>>` | Formatted date (e.g., "April 9, 2026") | plain text |
+| `<<BODY>>` | Full letter body with `\begin{itemize}` etc. | raw LaTeX |
+
+## Cover Letter Body Structure
+
+Keep it tight — 1 page max, shorter than a typical cover letter:
+
+```
+Opening paragraph (2-3 sentences): Position + why you're a fit. No "I am writing to express..."
+fluff — lead with the value prop.
+
+3 bullet points mapping JD requirements → proof points:
+  - \textbf{Requirement:} Your evidence (metric, project, result)
+
+Closing paragraph (1-2 sentences): Interest + call to action.
+```
 
 ## Reglas ATS (parseo limpio)
 
 - Layout single-column (sin sidebars, sin columnas paralelas)
-- Headers estándar: "Professional Summary", "Work Experience", "Education", "Skills", "Certifications", "Projects"
-- Sin texto en imágenes/SVGs
-- Sin info crítica en headers/footers del PDF (ATS los ignora)
-- UTF-8, texto seleccionable (no rasterizado)
-- Sin tablas anidadas
-- Keywords del JD distribuidas: Summary (top 5), primer bullet de cada rol, Skills section
-
-## Diseño del PDF
-
-- **Fonts**: Space Grotesk (headings, 600-700) + DM Sans (body, 400-500)
-- **Fonts self-hosted**: `fonts/`
-- **Header**: nombre en Space Grotesk 24px bold + línea gradiente `linear-gradient(to right, hsl(187,74%,32%), hsl(270,70%,45%))` 2px + fila de contacto
-- **Section headers**: Space Grotesk 13px, uppercase, letter-spacing 0.05em, color cyan primary
-- **Body**: DM Sans 11px, line-height 1.5
-- **Company names**: color accent purple `hsl(270,70%,45%)`
-- **Márgenes**: 0.6in
-- **Background**: blanco puro
-
-## Orden de secciones (optimizado "6-second recruiter scan")
-
-1. Header (nombre grande, gradiente, contacto, link portfolio)
-2. Professional Summary (3-4 líneas, keyword-dense)
-3. Core Competencies (6-8 keyword phrases en flex-grid)
-4. Work Experience (cronológico inverso)
-5. Projects (top 3-4 más relevantes)
-6. Education & Certifications
-7. Skills (idiomas + técnicos)
+- Headers estándar: "Profile", "Achievements", "Education", "Experience", "Project", "Skills & Interests"
+- UTF-8 text, selectable (LaTeX default)
+- Keywords del JD distribuidas: Profile (top 5), primer bullet de cada rol, Skills section
 
 ## Estrategia de keyword injection (ético, basado en verdad)
 
@@ -60,43 +106,13 @@ Ejemplos de reformulación legítima:
 
 **NUNCA añadir skills que el candidato no tiene. Solo reformular experiencia real con el vocabulario exacto del JD.**
 
-## Template HTML
-
-Usar el template en `cv-template.html`. Reemplazar los placeholders `{{...}}` con contenido personalizado:
-
-| Placeholder | Contenido |
-|-------------|-----------|
-| `{{LANG}}` | `en` o `es` |
-| `{{PAGE_WIDTH}}` | `8.5in` (letter) o `210mm` (A4) |
-| `{{NAME}}` | (from profile.yml) |
-| `{{EMAIL}}` | (from profile.yml) |
-| `{{LINKEDIN_URL}}` | [from profile.yml] |
-| `{{LINKEDIN_DISPLAY}}` | [from profile.yml] |
-| `{{PORTFOLIO_URL}}` | [from profile.yml] (o /es según idioma) |
-| `{{PORTFOLIO_DISPLAY}}` | [from profile.yml] (o /es según idioma) |
-| `{{LOCATION}}` | [from profile.yml] |
-| `{{SECTION_SUMMARY}}` | Professional Summary / Resumen Profesional |
-| `{{SUMMARY_TEXT}}` | Summary personalizado con keywords |
-| `{{SECTION_COMPETENCIES}}` | Core Competencies / Competencias Core |
-| `{{COMPETENCIES}}` | `<span class="competency-tag">keyword</span>` × 6-8 |
-| `{{SECTION_EXPERIENCE}}` | Work Experience / Experiencia Laboral |
-| `{{EXPERIENCE}}` | HTML de cada trabajo con bullets reordenados |
-| `{{SECTION_PROJECTS}}` | Projects / Proyectos |
-| `{{PROJECTS}}` | HTML de top 3-4 proyectos |
-| `{{SECTION_EDUCATION}}` | Education / Formación |
-| `{{EDUCATION}}` | HTML de educación |
-| `{{SECTION_CERTIFICATIONS}}` | Certifications / Certificaciones |
-| `{{CERTIFICATIONS}}` | HTML de certificaciones |
-| `{{SECTION_SKILLS}}` | Skills / Competencias |
-| `{{SKILLS}}` | HTML de skills |
-
 ## Canva CV Generation (optional)
 
 If `config/profile.yml` has `canva_resume_design_id` set, offer the user a choice before generating:
-- **"HTML/PDF (fast, ATS-optimized)"** — existing flow above
-- **"Canva CV (visual, design-preserving)"** — new flow below
+- **"LaTeX/PDF (default, ATS-optimized)"** — flow above
+- **"Canva CV (visual, design-preserving)"** — see Canva workflow below
 
-If the user has no `canva_resume_design_id`, skip this prompt and use the HTML/PDF flow.
+If the user has no `canva_resume_design_id`, skip this prompt and use the LaTeX flow.
 
 ### Canva workflow
 
@@ -119,8 +135,8 @@ c. If mapping fails, show the user what was found and ask for guidance
 
 #### Step 3 — Generate tailored content
 
-Same content generation as the HTML flow (Steps 1-11 above):
-- Rewrite Professional Summary with JD keywords + exit narrative
+Same content generation as the LaTeX flow:
+- Rewrite Profile with JD keywords + narrative bridge
 - Reorder experience bullets by JD relevance
 - Select top competencies from JD requirements
 - Inject keywords naturally (NEVER invent)
@@ -152,7 +168,7 @@ e. `commit-editing-transaction` to save (ONLY after user approval)
 
 #### Step 5 — Export and download PDF
 
-a. `export-design` the duplicate as PDF (format: a4 or letter based on JD location)
+a. `export-design` the duplicate as PDF
 b. **IMMEDIATELY** download the PDF using Bash:
    ```bash
    curl -sL -o "output/cv-{candidate}-{company}-canva-{YYYY-MM-DD}.pdf" "{download_url}"
@@ -167,7 +183,7 @@ d. Report: PDF path, file size, Canva design URL (for manual tweaking)
 
 #### Error handling
 
-- If `import-design-from-url` fails → fall back to HTML/PDF pipeline with message
+- If `import-design-from-url` fails → fall back to LaTeX pipeline with message
 - If text elements can't be mapped → warn user, show what was found, ask for manual mapping
 - If `find_and_replace_text` finds no matches → try broader substring matching
 - Always provide the Canva design URL so the user can edit manually if auto-edit fails

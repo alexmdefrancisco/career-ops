@@ -1,0 +1,69 @@
+% Cover Letter Template — career-ops
+\documentclass[11pt]{letter}
+
+\usepackage[utf8]{inputenc}
+\usepackage[empty]{fullpage}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\usepackage{graphicx}
+\usepackage{fontawesome5}
+\usepackage{eso-pic}
+\usepackage{charter}
+\usepackage{xcolor}
+
+\addtolength{\topmargin}{-0.5in}
+\addtolength{\textheight}{1.0in}
+
+\definecolor{gr}{RGB}{225,225,225}
+
+% --- Personal Information ---
+\newcommand{\myname}{<<NAME>>}
+\newcommand{\myemail}{<<EMAIL>>}
+\newcommand{\mygithub}{<<GITHUB>>}
+\newcommand{\mylinkedin}{<<LINKEDIN>>}
+\newcommand{\myphone}{<<PHONE>>}
+
+% --- Application Details ---
+\newcommand{\companyname}{<<COMPANY>>}
+\newcommand{\recipient}{<<RECIPIENT>>}
+\newcommand{\exactposition}{<<POSITION>>}
+\newcommand{\greeting}{<<GREETING>>}
+\newcommand{\closer}{<<CLOSER>>}
+
+\begin{document}
+
+% Shaded header banner
+\AddToShipoutPictureBG{%
+  \color{gr}
+  \AtPageUpperLeft{\rule[-1.3in]{\paperwidth}{1.3in}}
+}
+
+% Header
+\begin{center}
+    {\fontsize{28}{0}\selectfont\scshape \myname} \\[0.2cm]
+    \href{tel:\myphone}{\fontsize{9.5}{0}\selectfont\faPhone \hspace{.2em}\myphone}
+    \hfill
+    \href{mailto:\myemail}{\fontsize{9.5}{0}\selectfont\faEnvelope \hspace{.2em}\myemail}\hfill
+    \href{https://github.com/\mygithub}{\fontsize{9.5}{0}\selectfont\faGithub \hspace{.2em}\mygithub}\hfill
+    \href{https://linkedin.com/in/\mylinkedin}{\fontsize{9.5}{0}\selectfont\faLinkedinIn \hspace{.2em}\mylinkedin}
+\end{center}
+
+\vspace{0.2in}
+
+<<DATE>> \\
+
+\vspace{-0.1in}\greeting\ \recipient, \\
+
+\vspace{-0.1in}\setlength\parindent{24pt}
+\noindent <<BODY>>
+
+\vspace{0.1in}
+\vfill
+\begin{flushright}
+\closer, \\
+\myname
+\end{flushright}
+
+\end{document}

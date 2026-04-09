@@ -194,7 +194,7 @@ career-ops/
 │   ├── batch.md                 # Batch processing
 │   └── ...
 ├── templates/
-│   ├── cv-template.html         # ATS-optimized CV template
+│   ├── latex/                    # LaTeX templates (resume.cls, cv-template.tex, coverletter.tex)
 │   ├── portals.example.yml      # Scanner config template
 │   └── states.yml               # Canonical statuses
 ├── batch/
