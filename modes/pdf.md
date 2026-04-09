@@ -78,13 +78,31 @@ Templates live in `templates/latex/`:
 
 ## Cover Letter Body Structure
 
-Keep it tight — 1 page max, shorter than a typical cover letter:
+Keep it tight — 1 page max. **The structure is not fixed** — adapt it to the role, company, and context. No filler, no "I am writing to express..." fluff.
+
+### Principles (always apply)
+
+- Lead with the value prop, not with yourself.
+- Every claim needs evidence (metric, project, result).
+- Match the tone to the audience — a hedge fund desk expects precision, a fintech startup expects energy.
+- End with a clear call to action.
+
+### Adapt the structure to the context
+
+**Quant / systematic roles:** Lead with your strongest quantitative result (signal, PnL, Sharpe, latency). Use 2-3 short paragraphs rather than bullet points — quant readers scan for depth, not formatting. Mention specific tools/frameworks (Python, C++, Bayesian methods, etc.) inline rather than listing them. Close technically — reference a paper, a methodology, or a specific problem the team works on.
+
+**Finance — general / portfolio / risk:** Open with domain credibility (AUM, risk frameworks, regulatory knowledge). Bullet points work well here to map JD requirements → your evidence. 3-4 bullets max. Close with strategic interest in the firm's direction.
+
+**Referral / warm intro:** Shorter overall. Name the connection in the opening line. 1-2 paragraphs max — the referral does the heavy lifting, the letter just confirms fit.
+
+**Speculative / no open role:** Frame around a specific problem you can solve for them, not a job title. 2 paragraphs: what you bring + why this firm specifically.
+
+### Fallback (when none of the above fits)
 
 ```
-Opening paragraph (2-3 sentences): Position + why you're a fit. No "I am writing to express..."
-fluff — lead with the value prop.
+Opening paragraph (2-3 sentences): Position + why you're a fit.
 
-3 bullet points mapping JD requirements → proof points:
+2-4 bullet points mapping JD requirements → proof points:
   - \textbf{Requirement:} Your evidence (metric, project, result)
 
 Closing paragraph (1-2 sentences): Interest + call to action.
