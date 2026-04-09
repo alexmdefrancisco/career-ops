@@ -167,7 +167,7 @@ Donde `{company-slug}` es el nombre de empresa en lowercase, sin espacios, con g
 **Arquetipo:** {detectado}
 **Score:** {X/5}
 **URL:** {URL de la oferta original}
-**PDF:** career-ops/output/cv-candidate-{company-slug}-{{DATE}}.pdf
+**PDF:** career-ops/output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf
 **Batch ID:** {{ID}}
 
 ---
@@ -212,8 +212,9 @@ Donde `{company-slug}` es el nombre de empresa en lowercase, sin espacios, con g
 12. Escribe JSON a `/tmp/cv-vars-{company-slug}.json`
 13. Ejecuta:
 ```bash
+mkdir -p output/{report_name}/
 node generate-pdf-latex.mjs cv \
-  output/cv-candidate-{company-slug}-{{DATE}}.pdf \
+  output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf \
   --vars-file=/tmp/cv-vars-{company-slug}.json
 ```
 14. Si el script sale con código 2 → contenido desborda 1 página, reducir y reintentar

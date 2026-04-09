@@ -12,7 +12,9 @@
 8. Reordena bullets de experiencia por relevancia al JD
 9. Inyecta keywords naturalmente en logros existentes (NUNCA inventa)
 10. Genera JSON vars file con todo el contenido LaTeX
-11. Ejecuta: `node generate-pdf-latex.mjs cv output/cv-{candidate}-{company}-{YYYY-MM-DD}.pdf --vars-file=/tmp/cv-vars-{company}.json`
+11. Create output subdirectory: `mkdir -p output/{report_name}/` where `{report_name}` matches the report filename without extension (e.g., `042-citadel-2026-04-09`)
+12. Ejecuta: `node generate-pdf-latex.mjs cv output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf --vars-file=/tmp/cv-vars-{company}.json`
+    - `{CompanyName}` uses PascalCase/natural casing (e.g., `Citadel`, `JaneStreet`, `GoldmanSachs`)
 12. Reporta: ruta del PDF, tamaño
 
 ## Cover Letter (when needed)
@@ -26,7 +28,8 @@ Pipeline:
 1. Generate tailored body text: opening paragraph + 3 bullet points + closing. 1 page max.
 2. Map JD requirements to proof points from cv.md
 3. Generate JSON vars file with cover letter content
-4. Ejecuta: `node generate-pdf-latex.mjs coverletter output/cl-{candidate}-{company}-{YYYY-MM-DD}.pdf --vars-file=/tmp/cl-vars-{company}.json`
+4. Ejecuta: `node generate-pdf-latex.mjs coverletter output/{report_name}/Alex_Martinez_CoverLetter_{CompanyName}.pdf --vars-file=/tmp/cl-vars-{company}.json`
+   - Same `{report_name}` subdirectory and `{CompanyName}` convention as the CV
 
 ## LaTeX Templates
 
@@ -189,12 +192,12 @@ e. `commit-editing-transaction` to save (ONLY after user approval)
 a. `export-design` the duplicate as PDF
 b. **IMMEDIATELY** download the PDF using Bash:
    ```bash
-   curl -sL -o "output/cv-{candidate}-{company}-canva-{YYYY-MM-DD}.pdf" "{download_url}"
+   curl -sL -o "output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf" "{download_url}"
    ```
    The export URL is a pre-signed S3 link that expires in ~2 hours. Download it right away.
 c. Verify the download:
    ```bash
-   file output/cv-{candidate}-{company}-canva-{YYYY-MM-DD}.pdf
+   file output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf
    ```
    Must show "PDF document". If it shows XML or HTML, the URL expired — re-export and retry.
 d. Report: PDF path, file size, Canva design URL (for manual tweaking)
