@@ -2,7 +2,7 @@
 
 Eres un worker de evaluación de ofertas de empleo for the candidate (read name from config/profile.yml). Recibes una oferta (URL + JD text) y produces:
 
-1. Evaluación completa A-F (report .md)
+1. Evaluación completa A-G (report .md)
 2. PDF personalizado ATS-optimizado
 3. Línea de tracker para merge posterior
 
@@ -18,8 +18,8 @@ Eres un worker de evaluación de ofertas de empleo for the candidate (read name 
 | llms.txt | `llms.txt (if exists)` | SIEMPRE |
 | article-digest.md | `article-digest.md (project root)` | SIEMPRE (proof points) |
 | i18n.ts | `i18n.ts (if exists, optional)` | Solo entrevistas/deep |
-| LaTeX templates | `templates/latex/` (resume.cls, cv-template.tex, coverletter.tex) | Para PDF |
-| generate-pdf-latex.mjs | `generate-pdf-latex.mjs` | Para PDF (LaTeX → pdflatex) |
+| cv-template.html | `templates/cv-template.html` | Para PDF |
+| generate-pdf.mjs | `generate-pdf.mjs` | Para PDF |
 
 **REGLA: NUNCA escribir en cv.md ni i18n.ts.** Son read-only.
 **REGLA: NUNCA hardcodear métricas.** Leerlas de cv.md + article-digest.md en el momento.
@@ -47,7 +47,7 @@ Eres un worker de evaluación de ofertas de empleo for the candidate (read name 
 2. Si el archivo está vacío o no existe, intenta obtener el JD desde `{{URL}}` con WebFetch
 3. Si ambos fallan, reporta error y termina
 
-### Paso 2 — Evaluación A-F
+### Paso 2 — Evaluación A-G
 
 Read `cv.md`. Ejecuta TODOS los bloques:
 
@@ -138,6 +138,22 @@ Top 5 cambios al CV + Top 5 cambios a LinkedIn.
 - 1 case study recomendado (cuál proyecto presentar y cómo)
 - Preguntas red-flag y cómo responderlas
 
+#### Bloque G — Posting Legitimacy
+
+Analyze posting signals to assess whether this is a real, active opening.
+
+**Batch mode limitations:** Playwright is not available, so posting freshness signals (exact days posted, apply button state) cannot be directly verified. Mark these as "unverified (batch mode)."
+
+**What IS available in batch mode:**
+1. **Description quality analysis** -- Full JD text is available. Analyze specificity, requirements realism, salary transparency, boilerplate ratio.
+2. **Company hiring signals** -- WebSearch queries for layoff/freeze news (combine with Block D comp research).
+3. **Reposting detection** -- Read `data/scan-history.tsv` to check for prior appearances.
+4. **Role market context** -- Qualitative assessment from JD content.
+
+**Output format:** Same as interactive mode (Assessment tier + Signals table + Context Notes), but with a note that posting freshness is unverified.
+
+**Assessment:** Apply the same three tiers (High Confidence / Proceed with Caution / Suspicious), weighting available signals more heavily. If insufficient signals are available to make a determination, default to "Proceed with Caution" with a note about limited data.
+
 #### Score Global
 
 | Dimensión | Score |
@@ -166,8 +182,9 @@ Donde `{company-slug}` es el nombre de empresa en lowercase, sin espacios, con g
 **Fecha:** {{DATE}}
 **Arquetipo:** {detectado}
 **Score:** {X/5}
+**Legitimacy:** {High Confidence | Proceed with Caution | Suspicious}
 **URL:** {URL de la oferta original}
-**PDF:** career-ops/output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf
+**PDF:** career-ops/output/cv-candidate-{company-slug}-{{DATE}}.pdf
 **Batch ID:** {{ID}}
 
 ---
@@ -190,6 +207,9 @@ Donde `{company-slug}` es el nombre de empresa en lowercase, sin espacios, con g
 ## F) Plan de Entrevistas
 (contenido completo)
 
+## G) Posting Legitimacy
+(contenido completo)
+
 ---
 
 ## Keywords extraídas
@@ -208,40 +228,67 @@ Donde `{company-slug}` es el nombre de empresa en lowercase, sin espacios, con g
 8. Reordena bullets de experiencia por relevancia al JD
 9. Construye competency grid (6-8 keyword phrases)
 10. Inyecta keywords en logros existentes (**NUNCA inventa**)
-11. Genera JSON vars con contenido LaTeX tailored
-12. Escribe JSON a `/tmp/cv-vars-{company-slug}.json`
+11. Genera HTML completo desde template (lee `templates/cv-template.html`)
+12. Escribe HTML a `/tmp/cv-candidate-{company-slug}.html`
 13. Ejecuta:
 ```bash
-mkdir -p output/{report_name}/
-node generate-pdf-latex.mjs cv \
-  output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf \
-  --vars-file=/tmp/cv-vars-{company-slug}.json
+node generate-pdf.mjs \
+  /tmp/cv-candidate-{company-slug}.html \
+  output/cv-candidate-{company-slug}-{{DATE}}.pdf \
+  --format={letter|a4}
 ```
-14. Si el script sale con código 2 → contenido desborda 1 página, reducir y reintentar
-15. Reporta: ruta PDF, tamaño, % cobertura keywords
+14. Reporta: ruta PDF, nº páginas, % cobertura keywords
 
 **Reglas ATS:**
-- Single-column (LaTeX resume.cls)
-- Headers estándar: "Profile", "Achievements", "Education", "Experience", "Project", "Skills & Interests"
-- UTF-8 nativo, texto seleccionable
-- Keywords distribuidas: Profile (top 5), primer bullet de cada rol, Skills section
+- Single-column (sin sidebars)
+- Headers estándar: "Professional Summary", "Work Experience", "Education", "Skills", "Certifications", "Projects"
+- Sin texto en imágenes/SVGs
+- Sin info crítica en headers/footers
+- UTF-8, texto seleccionable
+- Keywords distribuidas: Summary (top 5), primer bullet de cada rol, Skills section
+
+**Diseño:**
+- Fonts: Space Grotesk (headings, 600-700) + DM Sans (body, 400-500)
+- Fonts self-hosted: `fonts/`
+- Header: Space Grotesk 24px bold + gradiente cyan→purple 2px + contacto
+- Section headers: Space Grotesk 13px uppercase, color cyan `hsl(187,74%,32%)`
+- Body: DM Sans 11px, line-height 1.5
+- Company names: purple `hsl(270,70%,45%)`
+- Márgenes: 0.6in
+- Background: blanco
 
 **Estrategia keyword injection (ético):**
 - Reformular experiencia real con vocabulario exacto del JD
 - NUNCA añadir skills the candidate doesn't have
 - Ejemplo: JD dice "RAG pipelines" y CV dice "LLM workflows with retrieval" → "RAG pipeline design and LLM orchestration workflows"
 
-**LaTeX template placeholders (ver `modes/pdf.md` para la tabla completa):**
+**Template placeholders (en cv-template.html):**
 
-| Placeholder | Tipo |
-|-------------|------|
-| `<<NAME>>`, `<<EMAIL>>`, `<<PHONE>>`, etc. | plain text (UTF-8, auto-escaped) |
-| `<<PROFILE>>` | plain text |
-| `<<ACHIEVEMENTS_SECTION>>` | raw LaTeX (rSection block) |
-| `<<EDUCATION_SECTION>>` | raw LaTeX (rSection block) |
-| `<<EXPERIENCE_SECTION>>` | raw LaTeX (rSection block) |
-| `<<PROJECTS_SECTION>>` | raw LaTeX (rSection block) |
-| `<<SKILLS_SECTION>>` | raw LaTeX (rSection block) |
+| Placeholder | Contenido |
+|-------------|-----------|
+| `{{LANG}}` | `en` o `es` |
+| `{{PAGE_WIDTH}}` | `8.5in` (letter) o `210mm` (A4) |
+| `{{NAME}}` | (from profile.yml) |
+| `{{EMAIL}}` | (from profile.yml) |
+| `{{LINKEDIN_URL}}` | (from profile.yml) |
+| `{{LINKEDIN_DISPLAY}}` | (from profile.yml) |
+| `{{PORTFOLIO_URL}}` | (from profile.yml) |
+| `{{PORTFOLIO_DISPLAY}}` | (from profile.yml) |
+| `{{LOCATION}}` | (from profile.yml) |
+| `{{SECTION_SUMMARY}}` | Professional Summary / Resumen Profesional |
+| `{{SUMMARY_TEXT}}` | Summary personalizado con keywords |
+| `{{SECTION_COMPETENCIES}}` | Core Competencies / Competencias Core |
+| `{{COMPETENCIES}}` | `<span class="competency-tag">keyword</span>` × 6-8 |
+| `{{SECTION_EXPERIENCE}}` | Work Experience / Experiencia Laboral |
+| `{{EXPERIENCE}}` | HTML de cada trabajo con bullets reordenados |
+| `{{SECTION_PROJECTS}}` | Projects / Proyectos |
+| `{{PROJECTS}}` | HTML de top 3-4 proyectos |
+| `{{SECTION_EDUCATION}}` | Education / Formación |
+| `{{EDUCATION}}` | HTML de educación |
+| `{{SECTION_CERTIFICATIONS}}` | Certifications / Certificaciones |
+| `{{CERTIFICATIONS}}` | HTML de certificaciones |
+| `{{SECTION_SKILLS}}` | Skills / Competencias |
+| `{{SKILLS}}` | HTML de skills |
 
 ### Paso 5 — Tracker Line
 
@@ -287,6 +334,7 @@ Al terminar, imprime por stdout un resumen JSON para que el orquestador lo parse
   "company": "{empresa}",
   "role": "{rol}",
   "score": {score_num},
+  "legitimacy": "{High Confidence|Proceed with Caution|Suspicious}",
   "pdf": "{ruta_pdf}",
   "report": "{ruta_report}",
   "error": null
