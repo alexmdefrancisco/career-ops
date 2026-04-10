@@ -214,7 +214,7 @@ career-ops/
 ![Bubble Tea](https://img.shields.io/badge/Bubble_Tea-FF75B5?style=flat&logo=go&logoColor=white)
 
 - **Agente**: Claude Code con skills y modos personalizados
-- **PDF**: Playwright/Puppeteer + template HTML
+- **PDF**: LaTeX (pdflatex) + templates
 - **Scanner**: Playwright + Greenhouse API + WebSearch
 - **Dashboard**: Go + Bubble Tea + Lipgloss (tema Catppuccin Mocha)
 - **Datos**: Tablas Markdown + config YAML + ficheros TSV batch

@@ -18,8 +18,8 @@ Eres un worker de evaluación de ofertas de empleo for the candidate (read name 
 | llms.txt | `llms.txt (if exists)` | SIEMPRE |
 | article-digest.md | `article-digest.md (project root)` | SIEMPRE (proof points) |
 | i18n.ts | `i18n.ts (if exists, optional)` | Solo entrevistas/deep |
-| cv-template.html | `templates/cv-template.html` | Para PDF |
-| generate-pdf.mjs | `generate-pdf.mjs` | Para PDF |
+| LaTeX templates | `templates/latex/` (resume.cls, cv-template.tex, coverletter.tex) | Para PDF |
+| generate-pdf-latex.mjs | `generate-pdf-latex.mjs` | Para PDF (LaTeX → pdflatex) |
 
 **REGLA: NUNCA escribir en cv.md ni i18n.ts.** Son read-only.
 **REGLA: NUNCA hardcodear métricas.** Leerlas de cv.md + article-digest.md en el momento.
@@ -223,72 +223,34 @@ Donde `{company-slug}` es el nombre de empresa en lowercase, sin espacios, con g
 3. Detecta idioma del JD → idioma del CV (EN default)
 4. Detecta ubicación empresa → formato papel: US/Canada → `letter`, resto → `a4`
 5. Detecta arquetipo → adapta framing
-6. Reescribe Professional Summary inyectando keywords
+6. Reescribe Profile inyectando keywords del JD + narrative bridge
 7. Selecciona top 3-4 proyectos más relevantes
 8. Reordena bullets de experiencia por relevancia al JD
-9. Construye competency grid (6-8 keyword phrases)
-10. Inyecta keywords en logros existentes (**NUNCA inventa**)
-11. Genera HTML completo desde template (lee `templates/cv-template.html`)
-12. Escribe HTML a `/tmp/cv-candidate-{company-slug}.html`
-13. Ejecuta:
-```bash
-node generate-pdf.mjs \
-  /tmp/cv-candidate-{company-slug}.html \
-  output/cv-candidate-{company-slug}-{{DATE}}.pdf \
-  --format={letter|a4}
-```
-14. Reporta: ruta PDF, nº páginas, % cobertura keywords
+9. Inyecta keywords en logros existentes (**NUNCA inventa**)
+10. Genera JSON vars file con contenido LaTeX
+11. Ejecuta: `node generate-pdf-latex.mjs cv output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf --vars-file=/tmp/cv-vars-{company}.json`
 
 **Reglas ATS:**
-- Single-column (sin sidebars)
-- Headers estándar: "Professional Summary", "Work Experience", "Education", "Skills", "Certifications", "Projects"
-- Sin texto en imágenes/SVGs
-- Sin info crítica en headers/footers
-- UTF-8, texto seleccionable
-- Keywords distribuidas: Summary (top 5), primer bullet de cada rol, Skills section
-
-**Diseño:**
-- Fonts: Space Grotesk (headings, 600-700) + DM Sans (body, 400-500)
-- Fonts self-hosted: `fonts/`
-- Header: Space Grotesk 24px bold + gradiente cyan→purple 2px + contacto
-- Section headers: Space Grotesk 13px uppercase, color cyan `hsl(187,74%,32%)`
-- Body: DM Sans 11px, line-height 1.5
-- Company names: purple `hsl(270,70%,45%)`
-- Márgenes: 0.6in
-- Background: blanco
+- Headers estándar: "Profile", "Achievements", "Education", "Experience", "Project", "Skills & Interests"
+- UTF-8 nativo, texto seleccionable
+- Keywords distribuidas: Profile (top 5), primer bullet de cada rol, Skills section
 
 **Estrategia keyword injection (ético):**
 - Reformular experiencia real con vocabulario exacto del JD
 - NUNCA añadir skills the candidate doesn't have
 - Ejemplo: JD dice "RAG pipelines" y CV dice "LLM workflows with retrieval" → "RAG pipeline design and LLM orchestration workflows"
 
-**Template placeholders (en cv-template.html):**
+**LaTeX template placeholders (ver `modes/pdf.md` para la tabla completa):**
 
-| Placeholder | Contenido |
-|-------------|-----------|
-| `{{LANG}}` | `en` o `es` |
-| `{{PAGE_WIDTH}}` | `8.5in` (letter) o `210mm` (A4) |
-| `{{NAME}}` | (from profile.yml) |
-| `{{EMAIL}}` | (from profile.yml) |
-| `{{LINKEDIN_URL}}` | (from profile.yml) |
-| `{{LINKEDIN_DISPLAY}}` | (from profile.yml) |
-| `{{PORTFOLIO_URL}}` | (from profile.yml) |
-| `{{PORTFOLIO_DISPLAY}}` | (from profile.yml) |
-| `{{LOCATION}}` | (from profile.yml) |
-| `{{SECTION_SUMMARY}}` | Professional Summary / Resumen Profesional |
-| `{{SUMMARY_TEXT}}` | Summary personalizado con keywords |
-| `{{SECTION_COMPETENCIES}}` | Core Competencies / Competencias Core |
-| `{{COMPETENCIES}}` | `<span class="competency-tag">keyword</span>` × 6-8 |
-| `{{SECTION_EXPERIENCE}}` | Work Experience / Experiencia Laboral |
-| `{{EXPERIENCE}}` | HTML de cada trabajo con bullets reordenados |
-| `{{SECTION_PROJECTS}}` | Projects / Proyectos |
-| `{{PROJECTS}}` | HTML de top 3-4 proyectos |
-| `{{SECTION_EDUCATION}}` | Education / Formación |
-| `{{EDUCATION}}` | HTML de educación |
-| `{{SECTION_CERTIFICATIONS}}` | Certifications / Certificaciones |
-| `{{CERTIFICATIONS}}` | HTML de certificaciones |
-| `{{SECTION_SKILLS}}` | Skills / Competencias |
-| `{{SKILLS}}` | HTML de skills |
+| Placeholder | Tipo |
+|-------------|------|
+| `<<NAME>>`, `<<EMAIL>>`, `<<PHONE>>`, etc. | plain text (UTF-8, auto-escaped) |
+| `<<PROFILE>>` | plain text |
+| `<<ACHIEVEMENTS_SECTION>>` | raw LaTeX (rSection block) |
+| `<<EDUCATION_SECTION>>` | raw LaTeX (rSection block) |
+| `<<EXPERIENCE_SECTION>>` | raw LaTeX (rSection block) |
+| `<<PROJECTS_SECTION>>` | raw LaTeX (rSection block) |
+| `<<SKILLS_SECTION>>` | raw LaTeX (rSection block) |
 
 ### Paso 5 — Tracker Line
 

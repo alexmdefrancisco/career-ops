@@ -196,7 +196,7 @@ career-ops/
 │   ├── batch.md                 # Batch processing
 │   └── ...
 ├── templates/
-│   ├── cv-template.html         # ATS-optimized CV template
+│   ├── latex/                    # LaTeX templates (resume.cls, cv-template.tex, coverletter.tex)
 │   ├── portals.example.yml      # Scanner config template
 │   └── states.yml               # Canonical statuses
 ├── batch/
@@ -220,7 +220,7 @@ career-ops/
 ![Bubble Tea](https://img.shields.io/badge/Bubble_Tea-FF75B5?style=flat&logo=go&logoColor=white)
 
 - **Agent**: Claude Code with custom skills and modes
-- **PDF**: Playwright/Puppeteer + HTML template
+- **PDF**: LaTeX (pdflatex) + templates
 - **Scanner**: Playwright + Greenhouse API + WebSearch
 - **Dashboard**: Go + Bubble Tea + Lipgloss (Catppuccin Mocha theme)
 - **Data**: Markdown tables + YAML config + TSV batch files

@@ -8,7 +8,7 @@
     "normalize": "node normalize-statuses.mjs",
     "dedup": "node dedup-tracker.mjs",
     "merge": "node merge-tracker.mjs",
-    "pdf": "node generate-pdf.mjs",
+    "pdf": "node generate-pdf-latex.mjs",
     "sync-check": "node cv-sync-check.mjs",
     "update:check": "node update-system.mjs check",
     "update": "node update-system.mjs apply",

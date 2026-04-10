@@ -33,14 +33,14 @@ Copy from `templates/portals.example.yml` and customize:
 3. **search_queries**: WebSearch queries for job boards (Ashby, Greenhouse, Lever)
 4. **tracked_companies**: Companies to check directly
 
-## CV Template (templates/cv-template.html)
+## CV Template (templates/latex/)
 
-The HTML template uses these design tokens:
-- **Fonts**: Space Grotesk (headings) + DM Sans (body) -- self-hosted in `fonts/`
-- **Colors**: Cyan primary (`hsl(187,74%,32%)`) + Purple accent (`hsl(270,70%,45%)`)
-- **Layout**: Single-column, ATS-optimized
+LaTeX templates for CV and cover letter generation:
+- **resume.cls**: Document class (layout, fonts, environments)
+- **cv-template.tex**: CV template with `<<PLACEHOLDER>>` tokens
+- **coverletter.tex**: Cover letter template with `<<PLACEHOLDER>>` tokens
 
-To customize fonts/colors, edit the CSS in the template. Update font files in `fonts/` if switching fonts.
+To customize the design, edit `resume.cls` (layout/fonts) or the `.tex` templates (structure/placeholders).
 
 ## Negotiation Scripts (modes/_shared.md)
 
