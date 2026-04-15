@@ -165,6 +165,19 @@ async function generatePDF() {
 
   await copyFile(builtPdf, outputPath);
 
+  // Mirror the .tex file into output_latex/ with the same subpath as the PDF.
+  // Example: output/004-flowtraders-.../Alex_Martinez_CV_FlowTraders.pdf
+  //       -> output_latex/004-flowtraders-.../Alex_Martinez_CV_FlowTraders.tex
+  const cwd = process.cwd();
+  const rel = outputPath.startsWith(cwd + '/') ? outputPath.slice(cwd.length + 1) : null;
+  if (rel && rel.startsWith('output/')) {
+    const subdir = dirname(rel.slice('output/'.length));
+    const texOut = resolve(cwd, 'output_latex', subdir, `${docType}.tex`);
+    await mkdir(dirname(texOut), { recursive: true });
+    await copyFile(texFile, texOut);
+    console.log(`\ud83d\udcdd LaTeX:  ${texOut}`);
+  }
+
   // Get file size
   const { statSync } = await import('fs');
   const stat = statSync(outputPath);

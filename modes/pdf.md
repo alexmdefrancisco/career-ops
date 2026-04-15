@@ -17,6 +17,8 @@
     - `{CompanyName}` uses PascalCase / natural casing (e.g. `Citadel`, `JaneStreet`, `GoldmanSachs`).
 13. Report: PDF path, size.
 
+The generator also mirrors the compiled `.tex` source into `output_latex/{report_name}/` (same filename, `.tex` extension) so the LaTeX is recoverable for manual tweaks. This folder is gitignored.
+
 ## Cover Letter (when needed)
 
 Generate a cover letter alongside the CV when:
