@@ -9,7 +9,8 @@
 5. Detect role archetype, adapt framing.
 6. Rewrite Profile injecting JD keywords + narrative bridge.
 7. Pick the top 3-4 projects most relevant to the offer.
-8. Reorder experience bullets by JD relevance.
+8. Reorder experience bullets by JD relevance. **Experience entries themselves must stay reverse-chronological** (most recent at top); only the bullets inside each entry get reordered by relevance.
+   - Optional snippets in `templates/snippets/` (e.g. RatePunk) may be inserted when the role archetype fits. When inserted, keep reverse-chronological order.
 9. Inject keywords naturally into existing achievements (NEVER invent).
 10. Generate a JSON vars file with all LaTeX content.
 11. Create the output subdirectory: `mkdir -p output/{report_name}/` where `{report_name}` matches the report filename without extension (e.g. `042-citadel-2026-04-09`).

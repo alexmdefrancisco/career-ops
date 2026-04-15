@@ -50,8 +50,9 @@ function fillTemplate(template, vars) {
     const placeholder = `<<${key}>>`;
     if (!result.includes(placeholder)) continue;
 
-    // If value contains LaTeX markup, insert as-is; otherwise escape
-    const isLatex = /\\[a-zA-Z]/.test(value) || /\\begin\b/.test(value);
+    // If value contains LaTeX markup, insert as-is; otherwise escape.
+    // Recognise both command sequences (\textbf) AND escaped specials (\%, \&, \$, \#, \_, \{, \}).
+    const isLatex = /\\([a-zA-Z]|[%&$#_{}])/.test(value) || /\\begin\b/.test(value);
     const replacement = isLatex ? value : escapeLatex(value);
     result = result.replaceAll(placeholder, replacement);
   }
@@ -63,7 +64,53 @@ function fillTemplate(template, vars) {
     console.warn(`\u26a0\ufe0f  Unfilled placeholders: ${unique.join(', ')}`);
   }
 
+  lintLatex(result);
+
   return result;
+}
+
+/**
+ * Warn on common rendering hazards in filled .tex content.
+ * Non-fatal; prints warnings so the human reviews before shipping.
+ */
+function lintLatex(tex) {
+  const warn = (msg, sample) => console.warn(`\u26a0\ufe0f  Lint: ${msg}${sample ? ` \u2192 "${sample}"` : ''}`);
+
+  // 1. Em-dash (AI watermark)
+  if (tex.includes('\u2014')) warn('em-dash detected (avoid; use ":" or " - ")');
+
+  // 2. Broken escape: double-escaped special char (rendered as "\{}%", "\{}&", etc.)
+  //    Comes from running escapeLatex() on a value that already contained \% / \& etc.
+  const broken = tex.match(/\\textbackslash\\?\{\\?\}\\?[%&$#_]/);
+  if (broken) warn('double-escaped special character (value was already LaTeX; detection missed it)', broken[0]);
+  const brokenShort = tex.match(/\\\{\}%/);
+  if (brokenShort) warn('broken percent escape "\\{}%" (use "\\%")', brokenShort[0]);
+
+  // 3. Orphan label: "Word:" or "Word:" followed by regular space + \href (line-break hazard)
+  const orphan = tex.match(/\b([A-Z][a-zA-Z]+): \\href\b/);
+  if (orphan) warn(`orphan label "${orphan[1]}:" before \\href (use "${orphan[1]}:~\\href" to avoid line break)`, orphan[0]);
+
+  // 4. Unescaped & outside of LaTeX commands (between letters, e.g. "R&D")
+  const amp = tex.match(/[A-Za-z0-9] & [A-Za-z0-9]/);
+  if (amp) warn('unescaped "&" between words (use "\\&")', amp[0]);
+
+  // 5. Raw < or > outside of math (e.g. "<5%" should be "$<$5\%")
+  const lt = tex.match(/(?<![\\$])<\d/);
+  if (lt) warn('raw "<" before digit (wrap in math: "$<$")', lt[0]);
+
+  // 6. Missing digit after "$<$" or "$>$": "($<$\%" instead of "($<$5\%"
+  const noDigit = tex.match(/\$[<>]\$\s*\\?[%&a-zA-Z]/);
+  if (noDigit) warn('math "<" or ">" not followed by a number (missing digit?)', noDigit[0]);
+
+  // 7. Unescaped "%" after a digit (LaTeX treats % as start-of-comment, silently eating the rest of the line)
+  //    Matches e.g. "5%" or "35%+" when not already "5\%".
+  const unesc = tex.match(/(?<!\\)\d%/);
+  if (unesc) warn('unescaped "%" after digit (use "\\%", else LaTeX swallows the rest of the line)', unesc[0]);
+
+  // 8. Awkward role subtitle: "Role : Subtitle" (leftover from em-dash -> colon sweep).
+  //    rSubsection's 3rd arg is the role; a " : " inside it reads weirdly in rendered italic.
+  const roleColon = tex.match(/\\begin\{rSubsection\}\{[^}]*\}\{[^}]*\}\{[^}]*\s:\s[^}]*\}/);
+  if (roleColon) warn('role subtitle contains " : " (prefer "," or " - "; em-dash swept too aggressively)', roleColon[0].slice(0, 80) + '...');
 }
 
 async function generatePDF() {
