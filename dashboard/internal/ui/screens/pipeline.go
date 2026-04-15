@@ -490,7 +490,7 @@ func (m PipelineModel) View() string {
 		body = m.overlayStatusPicker(body)
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left,
+	out := lipgloss.JoinVertical(lipgloss.Left,
 		header,
 		tabs,
 		metricsBar,
@@ -499,6 +499,7 @@ func (m PipelineModel) View() string {
 		preview,
 		help,
 	)
+	return lipgloss.NewStyle().MaxWidth(m.width).MaxHeight(m.height).Render(out)
 }
 
 func (m PipelineModel) renderHeader() string {
@@ -650,18 +651,24 @@ func (m PipelineModel) renderAppLine(app model.CareerApplication, selected bool)
 	padStyle := lipgloss.NewStyle().Padding(0, 2)
 
 	// Column widths
-	scoreW := 5   // "4.5  "
+	scoreW := 4   // "4.5 "
 	companyW := 20
 	statusW := 12
-	compW := 14
-	// Role gets remaining space
-	roleW := m.width - scoreW - companyW - statusW - compW - 10
+	// Role capped at 50; remaining space goes to Comp
+	roleW := m.width - scoreW - companyW - statusW - 28 - 10
 	if roleW < 15 {
 		roleW = 15
 	}
+	if roleW > 50 {
+		roleW = 50
+	}
+	compW := m.width - scoreW - companyW - statusW - roleW - 10
+	if compW < 20 {
+		compW = 20
+	}
 
-	// Score with color
-	scoreStyle := m.scoreStyle(app.Score)
+	// Score with color (fixed width so columns align)
+	scoreStyle := m.scoreStyle(app.Score).Width(scoreW)
 	score := scoreStyle.Render(fmt.Sprintf("%.1f", app.Score))
 
 	// Company (truncate)
@@ -679,11 +686,10 @@ func (m PipelineModel) renderAppLine(app model.CareerApplication, selected bool)
 	statusText := statusStyle.Render(statusLabel(norm))
 
 	// Comp from report cache -- fixed column
-	compText := ""
+	compStyle := lipgloss.NewStyle().Foreground(m.theme.Yellow).Width(compW)
+	compText := compStyle.Render("")
 	if summary, ok := m.reportCache[app.ReportPath]; ok && summary.comp != "" {
-		comp := truncateRunes(summary.comp, compW-1)
-		compStyle := lipgloss.NewStyle().Foreground(m.theme.Yellow)
-		compText = compStyle.Render(comp)
+		compText = compStyle.Render(truncateRunes(summary.comp, compW-1))
 	}
 
 	line := fmt.Sprintf(" %s %s %s %s %s",
@@ -723,7 +729,7 @@ func (m PipelineModel) renderPreview() string {
 	if summary, ok := m.reportCache[app.ReportPath]; ok {
 		if summary.archetype != "" {
 			lines = append(lines, padStyle.Render(
-				labelStyle.Render("Arquetipo: ")+valueStyle.Render(summary.archetype)))
+				labelStyle.Render("Archetype: ")+valueStyle.Render(summary.archetype)))
 		}
 		if summary.tldr != "" {
 			lines = append(lines, padStyle.Render(
