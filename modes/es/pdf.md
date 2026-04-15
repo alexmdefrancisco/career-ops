@@ -1,21 +1,21 @@
-# Mode: pdf - LaTeX PDF Generation
+# Modo: pdf — Generación de PDF via LaTeX
 
-## Full pipeline
+## Pipeline completo
 
-1. Read `cv.md` as the source of truth.
-2. Ask the user for the JD if it is not in context (text or URL).
-3. Extract 15-20 keywords from the JD.
-4. Detect JD language, match CV language (EN default).
-5. Detect role archetype, adapt framing.
-6. Rewrite Profile injecting JD keywords + narrative bridge.
-7. Pick the top 3-4 projects most relevant to the offer.
-8. Reorder experience bullets by JD relevance.
-9. Inject keywords naturally into existing achievements (NEVER invent).
-10. Generate a JSON vars file with all LaTeX content.
-11. Create the output subdirectory: `mkdir -p output/{report_name}/` where `{report_name}` matches the report filename without extension (e.g. `042-citadel-2026-04-09`).
-12. Run: `node generate-pdf-latex.mjs cv output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf --vars-file=/tmp/cv-vars-{company}.json`
-    - `{CompanyName}` uses PascalCase / natural casing (e.g. `Citadel`, `JaneStreet`, `GoldmanSachs`).
-13. Report: PDF path, size.
+1. Lee `cv.md` como fuente de verdad
+2. Pide al usuario el JD si no está en contexto (texto o URL)
+3. Extrae 15-20 keywords del JD
+4. Detecta idioma del JD → idioma del CV (EN default)
+5. Detecta arquetipo del rol → adapta framing
+6. Reescribe Profile inyectando keywords del JD + narrative bridge
+7. Selecciona top 3-4 proyectos más relevantes para la oferta
+8. Reordena bullets de experiencia por relevancia al JD
+9. Inyecta keywords naturalmente en logros existentes (NUNCA inventa)
+10. Genera JSON vars file con todo el contenido LaTeX
+11. Create output subdirectory: `mkdir -p output/{report_name}/` where `{report_name}` matches the report filename without extension (e.g., `042-citadel-2026-04-09`)
+12. Ejecuta: `node generate-pdf-latex.mjs cv output/{report_name}/Alex_Martinez_CV_{CompanyName}.pdf --vars-file=/tmp/cv-vars-{company}.json`
+    - `{CompanyName}` uses PascalCase/natural casing (e.g., `Citadel`, `JaneStreet`, `GoldmanSachs`)
+12. Reporta: ruta del PDF, tamaño
 
 ## Cover Letter (when needed)
 
@@ -28,7 +28,7 @@ Pipeline:
 1. Generate tailored body text: opening paragraph + 3 bullet points + closing. 1 page max.
 2. Map JD requirements to proof points from cv.md
 3. Generate JSON vars file with cover letter content
-4. Run: `node generate-pdf-latex.mjs coverletter output/{report_name}/Alex_Martinez_CoverLetter_{CompanyName}.pdf --vars-file=/tmp/cl-vars-{company}.json`
+4. Ejecuta: `node generate-pdf-latex.mjs coverletter output/{report_name}/Alex_Martinez_CoverLetter_{CompanyName}.pdf --vars-file=/tmp/cl-vars-{company}.json`
    - Same `{report_name}` subdirectory and `{CompanyName}` convention as the CV
 
 ## LaTeX Templates
@@ -111,21 +111,21 @@ Opening paragraph (2-3 sentences): Position + why you're a fit.
 Closing paragraph (1-2 sentences): Interest + call to action.
 ```
 
-## ATS rules (clean parsing)
+## Reglas ATS (parseo limpio)
 
-- Single-column layout (no sidebars, no parallel columns).
-- Standard headers: "Profile", "Achievements", "Education", "Experience", "Project", "Skills & Interests".
-- UTF-8 text, selectable (LaTeX default).
-- JD keywords distributed: Profile (top 5), first bullet of each role, Skills section.
+- Layout single-column (sin sidebars, sin columnas paralelas)
+- Headers estándar: "Profile", "Achievements", "Education", "Experience", "Project", "Skills & Interests"
+- UTF-8 text, selectable (LaTeX default)
+- Keywords del JD distribuidas: Profile (top 5), primer bullet de cada rol, Skills section
 
-## Keyword injection strategy (ethical, evidence-based)
+## Estrategia de keyword injection (ético, basado en verdad)
 
-Examples of legitimate rewording:
-- JD says "RAG pipelines" and CV says "LLM workflows with retrieval", change to "RAG pipeline design and LLM orchestration workflows".
-- JD says "MLOps" and CV says "observability, evals, error handling", change to "MLOps and observability: evals, error handling, cost monitoring".
-- JD says "stakeholder management" and CV says "collaborated with team", change to "stakeholder management across engineering, operations, and business".
+Ejemplos de reformulación legítima:
+- JD dice "RAG pipelines" y CV dice "LLM workflows with retrieval" → cambiar a "RAG pipeline design and LLM orchestration workflows"
+- JD dice "MLOps" y CV dice "observability, evals, error handling" → cambiar a "MLOps and observability: evals, error handling, cost monitoring"
+- JD dice "stakeholder management" y CV dice "collaborated with team" → cambiar a "stakeholder management across engineering, operations, and business"
 
-**NEVER add skills the candidate does not have. Only reword real experience using the exact JD vocabulary.**
+**NUNCA añadir skills que el candidato no tiene. Solo reformular experiencia real con el vocabulario exacto del JD.**
 
 ## Canva CV Generation (optional)
 
@@ -209,6 +209,6 @@ d. Report: PDF path, file size, Canva design URL (for manual tweaking)
 - If `find_and_replace_text` finds no matches → try broader substring matching
 - Always provide the Canva design URL so the user can edit manually if auto-edit fails
 
-## Post-generation
+## Post-generación
 
-Update the tracker if the offer is already registered: change PDF from red X to green check.
+Actualizar tracker si la oferta ya está registrada: cambiar PDF de ❌ a ✅.

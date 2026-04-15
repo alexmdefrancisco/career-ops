@@ -1,5 +1,11 @@
 # Career-Ops -- AI Job Search Pipeline
 
+## Output Style (HARD RULES)
+
+1. **No em-dashes (`—`) anywhere.** Use `:`, `.`, `,`, `()`, or ` - ` (spaced hyphen). Em-dash is treated as an AI watermark.
+2. **No broken characters in rendered output.** In LaTeX: escape `%` as `\%` (never `\{}%`), `&` as `\&`, `$ # _ { }` correctly. Before shipping any PDF, verify `&`, `%`, and `$` render cleanly (no stray `{}` glyphs next to them). If a compiled artifact shows garbled characters, fix and regenerate.
+3. **Single language per output.** Match the user's input language end-to-end. If the user writes in English, every generated artifact (chat reply, report headers, section labels, tracker notes, cover letter) must be English. Translate Spanish mode-template labels (`Bloque`, `Paso`, `Resumen del Rol`) to English when the user and JD are in English.
+
 ## Origin
 
 This system was built and used by [santifer](https://santifer.io) to evaluate 740+ job offers, generate 100+ tailored CVs, and land a Head of Applied AI role. The archetypes, scoring logic, negotiation scripts, and proof point structure all reflect his specific career search in AI/automation roles.
@@ -186,9 +192,10 @@ This system is designed to be customized by YOU (AI Agent). When the user asks y
 
 ### Language Modes
 
-Default modes are in `modes/` (English). Additional language-specific modes are available:
+Default modes are in `modes/` (English, canonical). Additional language-specific modes are available:
 
-- **German (DACH market):** `modes/de/` — native German translations with DACH-specific vocabulary (13. Monatsgehalt, Probezeit, Kündigungsfrist, AGG, Tarifvertrag, etc.). Includes `_shared.md`, `angebot.md` (evaluation), `bewerben.md` (apply), `pipeline.md`.
+- **Spanish:** `modes/es/` - full Spanish snapshot of the default modes (original author's language). Use when the user asks for Spanish output or targets Spanish-language postings.
+- **German (DACH market):** `modes/de/` - native German translations with DACH-specific vocabulary (13. Monatsgehalt, Probezeit, Kündigungsfrist, AGG, Tarifvertrag, etc.). Includes `_shared.md`, `angebot.md` (evaluation), `bewerben.md` (apply), `pipeline.md`.
 - **French (Francophone market):** `modes/fr/` — native French translations with France/Belgium/Switzerland/Luxembourg-specific vocabulary (CDI/CDD, convention collective SYNTEC, RTT, mutuelle, prévoyance, 13e mois, intéressement/participation, titres-restaurant, CSE, portage salarial, etc.). Includes `_shared.md`, `offre.md` (evaluation), `postuler.md` (apply), `pipeline.md`.
 - **Japanese (Japan market):** `modes/ja/` — native Japanese translations with Japan-specific vocabulary (正社員, 業務委託, 賞与, 退職金, みなし残業, 年俸制, 36協定, 通勤手当, 住宅手当, etc.). Includes `_shared.md`, `kyujin.md` (evaluation), `oubo.md` (apply), `pipeline.md`.
 
