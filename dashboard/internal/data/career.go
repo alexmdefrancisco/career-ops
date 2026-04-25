@@ -12,16 +12,31 @@ import (
 )
 
 var (
-	reReportLink     = regexp.MustCompile(`\[(\d+)\]\(([^)]+)\)`)
-	reScoreValue     = regexp.MustCompile(`(\d+\.?\d*)/5`)
-	reArchetype      = regexp.MustCompile(`(?i)\*\*Archetype\*\*\s*\|\s*(.+)`)
-	reTlDr           = regexp.MustCompile(`(?i)\*\*TL;DR\*\*\s*\|\s*(.+)`)
-	reTlDrColon      = regexp.MustCompile(`(?i)\*\*TL;DR:\*\*\s*(.+)`)
-	reRemote         = regexp.MustCompile(`(?i)\*\*Remote\*\*\s*\|\s*(.+)`)
-	reComp           = regexp.MustCompile(`(?i)\*\*Comp\*\*\s*\|\s*(.+)`)
+	reReportLink = regexp.MustCompile(`\[(\d+)\]\(([^)]+)\)`)
+	reScoreValue = regexp.MustCompile(`(\d+\.?\d*)/5`)
+
+	// Bolded table cells, e.g. "| **TL;DR** | text |"
+	reArchetype = regexp.MustCompile(`(?i)\*\*Archetype\*\*\s*\|\s*(.+)`)
+	reTlDr      = regexp.MustCompile(`(?i)\*\*TL;DR\*\*\s*\|\s*(.+)`)
+	reRemote    = regexp.MustCompile(`(?i)\*\*Remote\*\*\s*\|\s*(.+)`)
+	reComp      = regexp.MustCompile(`(?i)\*\*Comp\*\*\s*\|\s*(.+)`)
+
+	// Bolded colon prefix, e.g. "**Archetype:** text"
 	reArchetypeColon = regexp.MustCompile(`(?i)\*\*Archetype:\*\*\s*(.+)`)
-	reReportURL      = regexp.MustCompile(`(?m)^\*\*URL:\*\*\s*(https?://\S+)`)
-	reBatchID        = regexp.MustCompile(`(?m)^\*\*Batch ID:\*\*\s*(\d+)`)
+	reTlDrColon      = regexp.MustCompile(`(?i)\*\*TL;DR:\*\*\s*(.+)`)
+
+	// Unbolded table cells, e.g. "| TL;DR | text |"
+	reTlDrTable      = regexp.MustCompile(`(?im)^\|\s*TL;DR\s*\|\s*(.+)`)
+	reArchetypeTable = regexp.MustCompile(`(?im)^\|\s*(?:Detected\s+)?Archetype\s*\|\s*(.+)`)
+	reRemoteTable    = regexp.MustCompile(`(?im)^\|\s*Remote\s*\|\s*(.+)`)
+	reCompTable      = regexp.MustCompile(`(?im)^\|\s*Comp\s*\|\s*(.+)`)
+
+	// Batch narrative form, e.g. "Archetype detected: X."
+	reArchetypeNarrative = regexp.MustCompile(`(?i)Archetype detected:\s*(.+)`)
+
+	// Header markers
+	reReportURL = regexp.MustCompile(`(?m)^\*\*URL:\*\*\s*(https?://\S+)`)
+	reBatchID   = regexp.MustCompile(`(?m)^\*\*Batch ID:\*\*\s*(\d+)`)
 )
 
 // ParseApplications reads applications.md and returns parsed applications.
@@ -510,20 +525,32 @@ func LoadReportSummary(careerOpsPath, reportPath string) (archetype, tldr, remot
 		archetype = cleanTableCell(m[1])
 	} else if m := reArchetypeColon.FindStringSubmatch(text); m != nil {
 		archetype = cleanTableCell(m[1])
+	} else if m := reArchetypeTable.FindStringSubmatch(text); m != nil {
+		archetype = cleanTableCell(m[1])
+	} else if m := reArchetypeNarrative.FindStringSubmatch(text); m != nil {
+		archetype = strings.TrimSuffix(cleanTableCell(m[1]), ".")
 	}
 
-	// Try table-format TL;DR first (most reports), then colon format
+	// TL;DR: bolded table → bolded colon → unbolded table → batch Block A fallback
 	if m := reTlDr.FindStringSubmatch(text); m != nil {
 		tldr = cleanTableCell(m[1])
 	} else if m := reTlDrColon.FindStringSubmatch(text); m != nil {
 		tldr = cleanTableCell(m[1])
+	} else if m := reTlDrTable.FindStringSubmatch(text); m != nil {
+		tldr = cleanTableCell(m[1])
+	} else {
+		tldr = extractBlockASummary(text)
 	}
 
 	if m := reRemote.FindStringSubmatch(text); m != nil {
 		remote = cleanTableCell(m[1])
+	} else if m := reRemoteTable.FindStringSubmatch(text); m != nil {
+		remote = cleanTableCell(m[1])
 	}
 
 	if m := reComp.FindStringSubmatch(text); m != nil {
+		comp = cleanTableCell(m[1])
+	} else if m := reCompTable.FindStringSubmatch(text); m != nil {
 		comp = cleanTableCell(m[1])
 	}
 
@@ -581,6 +608,39 @@ func cleanTableCell(s string) string {
 	s = strings.TrimSpace(s)
 	s = strings.TrimRight(s, "|")
 	return strings.TrimSpace(s)
+}
+
+// extractBlockASummary returns the first sentence of "## Block A: Role Summary"
+// or "## A) Role Summary" for batch-format reports that lack a TL;DR field.
+func extractBlockASummary(text string) string {
+	var idx int = -1
+	for _, marker := range []string{"## Block A:", "## A)", "## Block A "} {
+		if i := strings.Index(text, marker); i >= 0 {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return ""
+	}
+	rest := text[idx:]
+	if newline := strings.Index(rest, "\n"); newline >= 0 {
+		rest = rest[newline+1:]
+	}
+	rest = strings.TrimSpace(rest)
+	// Stop at next section heading
+	if next := strings.Index(rest, "\n##"); next >= 0 {
+		rest = rest[:next]
+	}
+	rest = strings.TrimSpace(rest)
+	// First sentence: up to first ". "
+	if dot := strings.Index(rest, ". "); dot > 0 && dot < 400 {
+		return strings.TrimSpace(rest[:dot+1])
+	}
+	if line := strings.SplitN(rest, "\n", 2)[0]; line != "" {
+		return strings.TrimSpace(line)
+	}
+	return ""
 }
 
 // StatusPriority returns the sort priority for a status (lower = higher priority).

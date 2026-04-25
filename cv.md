@@ -15,7 +15,6 @@ EPFL Financial Engineering MSc with live quant research experience at a FINMA-re
 ### Universitat Politècnica de Catalunya (UPC) | 2017 - 2021
 **Bachelor's in Aerospace Engineering Technology** — Barcelona, Spain
 - Graduated **1st out of 60+** (top 1%). Linear Algebra, Multivariate Calculus, Numerical Methods, PDEs, Statistics.
-- **Banco Santander Research Scholarship** (<5% acceptance rate) for computational methods research.
 
 ### Universitat Oberta de Catalunya (UOC) | 2020 - Present
 **Bachelor's in Business Administration** — Online
@@ -34,9 +33,10 @@ EPFL Financial Engineering MSc with live quant research experience at a FINMA-re
 - Architected real-time analytics dashboard tracking 12 KPIs across 100k+ users — the decision layer for all product and growth strategy.
 - Scaled product from zero to 100k+ users with 25% MoM engagement growth; managed full technical stack and a 4-person engineering team.
 
-### Research Intern — Computational Fluid Dynamics | Apr - Nov 2021
+### Research Intern — Fluid Mechanics Department | Apr - Nov 2021
 **ESEIAAT - UPC** — Terrassa, Spain
-- Built vectorized Python solver for compressible flow PDEs (Euler equations, finite volume method), reducing simulation runtime 40% vs. baseline implementation.
+- **Banco Santander Research Scholarship** (<5% acceptance) for the Bachelor thesis project under the Fluid Mechanics Department (advisor: Prof. Roberto Castilla López).
+- Built a **1-D Python solver for a supersonic ejector** that approximates performance and vacuum levels for a given geometry, feeding loss coefficients from the lab's OpenFOAM CFD simulations so geometry sweeps run in seconds instead of hours.
 
 ### Software Engineer (Mobile) | Aug 2023 - Feb 2024
 **RatePunk** — Vilnius, Lithuania (Remote)

@@ -685,9 +685,11 @@ func (m PipelineModel) renderAppLine(app model.CareerApplication, selected bool)
 	statusStyle := lipgloss.NewStyle().Foreground(statusColor).Width(statusW)
 	statusText := statusStyle.Render(statusLabel(norm))
 
-	// Comp from report cache -- fixed column
+	// Comp from report cache -- fixed column. If missing, show a dim placeholder so
+	// the column never collapses to blank.
 	compStyle := lipgloss.NewStyle().Foreground(m.theme.Yellow).Width(compW)
-	compText := compStyle.Render("")
+	placeholderStyle := lipgloss.NewStyle().Foreground(m.theme.Subtext).Width(compW)
+	compText := placeholderStyle.Render("comp n/a")
 	if summary, ok := m.reportCache[app.ReportPath]; ok && summary.comp != "" {
 		compText = compStyle.Render(truncateRunes(summary.comp, compW-1))
 	}

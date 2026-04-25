@@ -178,6 +178,45 @@ for (const e of entries) {
 }
 if (boldScores === 0) ok('No bold in scores');
 
+// --- Check 8: Required fields in every report ---
+// Every report MUST contain: Date, Archetype, Score, Legitimacy, URL, PDF, TL;DR.
+// TL;DR is mandatory because the dashboard preview depends on it.
+const REQUIRED_HEADER_FIELDS = ['Date', 'Archetype', 'Score', 'Legitimacy', 'URL', 'PDF'];
+
+function findField(text, name) {
+  // Match either "**Name:** value" or "**Name** | value" (table form), case-insensitive.
+  const reColon = new RegExp(`\\*\\*${name}:\\*\\*\\s*(.+)`, 'i');
+  const reTable = new RegExp(`\\*\\*${name}\\*\\*\\s*\\|\\s*(.+)`, 'i');
+  return text.match(reColon) || text.match(reTable);
+}
+
+function findTLDR(text) {
+  // Accept any of: "**TL;DR:** ...", "**TL;DR** | ...", "| TL;DR | ..." (unbolded table cell).
+  return text.match(/\*\*TL;DR:\*\*\s*.+/i)
+    || text.match(/\*\*TL;DR\*\*\s*\|\s*.+/i)
+    || text.match(/^\|\s*TL;DR\s*\|\s*.+/im);
+}
+
+let badReports = 0;
+if (existsSync(REPORTS_DIR)) {
+  const reportFiles = readdirSync(REPORTS_DIR).filter(f => f.endsWith('.md'));
+  for (const file of reportFiles) {
+    const text = readFileSync(join(REPORTS_DIR, file), 'utf-8');
+    // Only scan the header (first 1500 chars) for header fields, full text for TL;DR
+    const head = text.slice(0, 1500);
+    const missing = [];
+    for (const field of REQUIRED_HEADER_FIELDS) {
+      if (!findField(head, field)) missing.push(field);
+    }
+    if (!findTLDR(text)) missing.push('TL;DR');
+    if (missing.length > 0) {
+      error(`Report ${file}: missing required fields → ${missing.join(', ')}`);
+      badReports++;
+    }
+  }
+}
+if (badReports === 0) ok('All reports have required fields (incl. TL;DR)');
+
 // --- Summary ---
 console.log('\n' + '='.repeat(50));
 console.log(`📊 Pipeline Health: ${errors} errors, ${warnings} warnings`);

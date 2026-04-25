@@ -67,7 +67,7 @@ AI-powered job search automation built on Claude Code: pipeline tracking, offer 
 | `analyze-patterns.mjs` | Pattern analysis script (JSON output) |
 | `followup-cadence.mjs` | Follow-up cadence calculator (JSON output) |
 | `data/follow-ups.md` | Follow-up history tracker |
-| `reports/` | Evaluation reports (format: `{###}-{company-slug}-{YYYY-MM-DD}.md`). Blocks A-F + G (Posting Legitimacy). Header includes `**Legitimacy:** {tier}`. |
+| `reports/` | Evaluation reports (format: `{###}-{company-slug}-{YYYY-MM-DD}.md`). Blocks A-F + G (Posting Legitimacy). Header MUST include `**Date:**`, `**Archetype:**`, `**Score:**`, `**Legitimacy:**`, `**URL:**`, `**PDF:**`, and `**TL;DR:**` (one-sentence summary, mandatory). `verify-pipeline.mjs` enforces this. |
 
 ### OpenCode Commands
 

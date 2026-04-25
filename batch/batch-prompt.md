@@ -91,6 +91,20 @@ Convertir "builder" en señal profesional, no en "hobby maker". El framing cambi
 
 Tabla con: Arquetipo detectado, Domain, Function, Seniority, Remote, Team size, TL;DR.
 
+**Cabecera del report (OBLIGATORIO, todos los campos):**
+
+```
+**Date:** {YYYY-MM-DD}
+**Archetype:** {detected}
+**Score:** {X/5}
+**Legitimacy:** {High Confidence | Proceed with Caution | Suspicious}
+**URL:** {posting URL}
+**PDF:** {path | generated | not generated}
+**TL;DR:** {one-sentence summary}
+```
+
+`TL;DR` es campo OBLIGATORIO en la cabecera (no opcional, no solo dentro de la tabla de Bloque A). El dashboard y `verify-pipeline.mjs` fallan si falta.
+
 #### Bloque B — Match con CV
 
 Read `cv.md`. Tabla con cada requisito del JD mapeado a líneas exactas del CV o keys de i18n.ts.

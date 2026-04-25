@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -e
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+usage() {
+  echo "Usage: ./launch <subcommand>"
+  echo ""
+  echo "Subcommands:"
+  echo "  dashboard   Launch the career-ops terminal dashboard"
+  exit 1
+}
+
+case "$1" in
+  dashboard)
+    BIN="$ROOT/dashboard/career-dashboard"
+    # Rebuild if binary is missing or any Go source is newer than the binary.
+    needs_build=0
+    if [ ! -x "$BIN" ]; then
+      needs_build=1
+    else
+      while IFS= read -r src; do
+        if [ "$src" -nt "$BIN" ]; then needs_build=1; break; fi
+      done < <(find "$ROOT/dashboard" -name '*.go' -type f)
+    fi
+    if [ "$needs_build" -eq 1 ]; then
+      echo "Building dashboard..."
+      (cd "$ROOT/dashboard" && go build -o career-dashboard .)
+    fi
+    cd "$ROOT/dashboard" && exec ./career-dashboard --path ..
+    ;;
+  ""|-h|--help|help)
+    usage
+    ;;
+  *)
+    echo "Unknown subcommand: $1"
+    usage
+    ;;
+esac

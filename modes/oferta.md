@@ -156,6 +156,8 @@ Save the full evaluation to `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 **Report format:**
 
+All header fields below are MANDATORY. The dashboard parser and `verify-pipeline.mjs` will fail if any are missing. `TL;DR` is required (not optional): one sentence that the dashboard preview shows when the user navigates to this report.
+
 ```markdown
 # Evaluation: {Company} - {Role}
 
@@ -163,7 +165,9 @@ Save the full evaluation to `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 **Archetype:** {detected}
 **Score:** {X/5}
 **Legitimacy:** {High Confidence | Proceed with Caution | Suspicious}
+**URL:** {original posting URL}
 **PDF:** {path or pending}
+**TL;DR:** {one-sentence summary of the role and fit}
 
 ---
 
