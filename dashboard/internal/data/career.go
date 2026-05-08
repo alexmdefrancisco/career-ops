@@ -5,38 +5,25 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/santifer/career-ops/dashboard/internal/model"
 )
 
 var (
-	reReportLink = regexp.MustCompile(`\[(\d+)\]\(([^)]+)\)`)
-	reScoreValue = regexp.MustCompile(`(\d+\.?\d*)/5`)
-
-	// Bolded table cells, e.g. "| **TL;DR** | text |"
-	reArchetype = regexp.MustCompile(`(?i)\*\*Archetype\*\*\s*\|\s*(.+)`)
-	reTlDr      = regexp.MustCompile(`(?i)\*\*TL;DR\*\*\s*\|\s*(.+)`)
-	reRemote    = regexp.MustCompile(`(?i)\*\*Remote\*\*\s*\|\s*(.+)`)
-	reComp      = regexp.MustCompile(`(?i)\*\*Comp\*\*\s*\|\s*(.+)`)
-
-	// Bolded colon prefix, e.g. "**Archetype:** text"
-	reArchetypeColon = regexp.MustCompile(`(?i)\*\*Archetype:\*\*\s*(.+)`)
+	reReportLink     = regexp.MustCompile(`\[(\d+)\]\(([^)]+)\)`)
+	reScoreValue     = regexp.MustCompile(`(\d+\.?\d*)/5`)
+	reArchetype      = regexp.MustCompile(`(?i)\*\*Arquetipo(?:\s+detectado)?\*\*\s*\|\s*(.+)`)
+	reTlDr           = regexp.MustCompile(`(?i)\*\*TL;DR\*\*\s*\|\s*(.+)`)
 	reTlDrColon      = regexp.MustCompile(`(?i)\*\*TL;DR:\*\*\s*(.+)`)
-
-	// Unbolded table cells, e.g. "| TL;DR | text |"
-	reTlDrTable      = regexp.MustCompile(`(?im)^\|\s*TL;DR\s*\|\s*(.+)`)
-	reArchetypeTable = regexp.MustCompile(`(?im)^\|\s*(?:Detected\s+)?Archetype\s*\|\s*(.+)`)
-	reRemoteTable    = regexp.MustCompile(`(?im)^\|\s*Remote\s*\|\s*(.+)`)
-	reCompTable      = regexp.MustCompile(`(?im)^\|\s*Comp\s*\|\s*(.+)`)
-
-	// Batch narrative form, e.g. "Archetype detected: X."
-	reArchetypeNarrative = regexp.MustCompile(`(?i)Archetype detected:\s*(.+)`)
-
-	// Header markers
-	reReportURL = regexp.MustCompile(`(?m)^\*\*URL:\*\*\s*(https?://\S+)`)
-	reBatchID   = regexp.MustCompile(`(?m)^\*\*Batch ID:\*\*\s*(\d+)`)
+	reRemote         = regexp.MustCompile(`(?i)\*\*Remote\*\*\s*\|\s*(.+)`)
+	reComp           = regexp.MustCompile(`(?i)\*\*Comp\*\*\s*\|\s*(.+)`)
+	reArchetypeColon = regexp.MustCompile(`(?i)\*\*Arquetipo:\*\*\s*(.+)`)
+	reReportURL      = regexp.MustCompile(`(?m)^\*\*URL:\*\*\s*(https?://\S+)`)
+	reBatchID        = regexp.MustCompile(`(?m)^\*\*Batch ID:\*\*\s*(\d+)`)
 )
 
 // ParseApplications reads applications.md and returns parsed applications.
@@ -90,8 +77,12 @@ func ParseApplications(careerOpsPath string) []model.CareerApplication {
 		}
 
 		num++
+		trackerNumber := num
+		if parsedNumber, err := strconv.Atoi(fields[0]); err == nil {
+			trackerNumber = parsedNumber
+		}
 		app := model.CareerApplication{
-			Number:  num,
+			Number:  trackerNumber,
 			Date:    fields[1],
 			Company: fields[2],
 			Role:    fields[3],
@@ -525,32 +516,20 @@ func LoadReportSummary(careerOpsPath, reportPath string) (archetype, tldr, remot
 		archetype = cleanTableCell(m[1])
 	} else if m := reArchetypeColon.FindStringSubmatch(text); m != nil {
 		archetype = cleanTableCell(m[1])
-	} else if m := reArchetypeTable.FindStringSubmatch(text); m != nil {
-		archetype = cleanTableCell(m[1])
-	} else if m := reArchetypeNarrative.FindStringSubmatch(text); m != nil {
-		archetype = strings.TrimSuffix(cleanTableCell(m[1]), ".")
 	}
 
-	// TL;DR: bolded table → bolded colon → unbolded table → batch Block A fallback
+	// Try table-format TL;DR first (most reports), then colon format
 	if m := reTlDr.FindStringSubmatch(text); m != nil {
 		tldr = cleanTableCell(m[1])
 	} else if m := reTlDrColon.FindStringSubmatch(text); m != nil {
 		tldr = cleanTableCell(m[1])
-	} else if m := reTlDrTable.FindStringSubmatch(text); m != nil {
-		tldr = cleanTableCell(m[1])
-	} else {
-		tldr = extractBlockASummary(text)
 	}
 
 	if m := reRemote.FindStringSubmatch(text); m != nil {
 		remote = cleanTableCell(m[1])
-	} else if m := reRemoteTable.FindStringSubmatch(text); m != nil {
-		remote = cleanTableCell(m[1])
 	}
 
 	if m := reComp.FindStringSubmatch(text); m != nil {
-		comp = cleanTableCell(m[1])
-	} else if m := reCompTable.FindStringSubmatch(text); m != nil {
 		comp = cleanTableCell(m[1])
 	}
 
@@ -610,39 +589,6 @@ func cleanTableCell(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// extractBlockASummary returns the first sentence of "## Block A: Role Summary"
-// or "## A) Role Summary" for batch-format reports that lack a TL;DR field.
-func extractBlockASummary(text string) string {
-	var idx int = -1
-	for _, marker := range []string{"## Block A:", "## A)", "## Block A "} {
-		if i := strings.Index(text, marker); i >= 0 {
-			idx = i
-			break
-		}
-	}
-	if idx < 0 {
-		return ""
-	}
-	rest := text[idx:]
-	if newline := strings.Index(rest, "\n"); newline >= 0 {
-		rest = rest[newline+1:]
-	}
-	rest = strings.TrimSpace(rest)
-	// Stop at next section heading
-	if next := strings.Index(rest, "\n##"); next >= 0 {
-		rest = rest[:next]
-	}
-	rest = strings.TrimSpace(rest)
-	// First sentence: up to first ". "
-	if dot := strings.Index(rest, ". "); dot > 0 && dot < 400 {
-		return strings.TrimSpace(rest[:dot+1])
-	}
-	if line := strings.SplitN(rest, "\n", 2)[0]; line != "" {
-		return strings.TrimSpace(line)
-	}
-	return ""
-}
-
 // StatusPriority returns the sort priority for a status (lower = higher priority).
 func StatusPriority(status string) int {
 	switch NormalizeStatus(status) {
@@ -665,4 +611,130 @@ func StatusPriority(status string) int {
 	default:
 		return 8
 	}
+}
+
+// ComputeProgressMetrics computes progress-oriented analytics from applications.
+func ComputeProgressMetrics(apps []model.CareerApplication) model.ProgressMetrics {
+	pm := model.ProgressMetrics{}
+
+	// Count by normalized status
+	statusCounts := make(map[string]int)
+	var totalScore float64
+	var scored int
+
+	for _, app := range apps {
+		norm := NormalizeStatus(app.Status)
+		statusCounts[norm]++
+
+		if app.Score > 0 {
+			totalScore += app.Score
+			scored++
+			if app.Score > pm.TopScore {
+				pm.TopScore = app.Score
+			}
+		}
+
+		if norm == "offer" {
+			pm.TotalOffers++
+		}
+		if norm != "skip" && norm != "rejected" && norm != "discarded" {
+			pm.ActiveApps++
+		}
+	}
+
+	if scored > 0 {
+		pm.AvgScore = totalScore / float64(scored)
+	}
+
+	// Funnel: each stage counts all apps that reached at least that stage.
+	// An app in "interview" has passed through evaluated -> applied -> responded -> interview.
+	total := len(apps)
+	applied := statusCounts["applied"] + statusCounts["responded"] + statusCounts["interview"] + statusCounts["offer"] + statusCounts["rejected"]
+	responded := statusCounts["responded"] + statusCounts["interview"] + statusCounts["offer"]
+	interview := statusCounts["interview"] + statusCounts["offer"]
+	offer := statusCounts["offer"]
+
+	pm.FunnelStages = []model.FunnelStage{
+		{Label: "Evaluated", Count: total, Pct: 100.0},
+		{Label: "Applied", Count: applied, Pct: safePct(applied, total)},
+		{Label: "Responded", Count: responded, Pct: safePct(responded, applied)},
+		{Label: "Interview", Count: interview, Pct: safePct(interview, applied)},
+		{Label: "Offer", Count: offer, Pct: safePct(offer, applied)},
+	}
+
+	// Rates (relative to applied)
+	if applied > 0 {
+		pm.ResponseRate = float64(responded) / float64(applied) * 100
+		pm.InterviewRate = float64(interview) / float64(applied) * 100
+		pm.OfferRate = float64(offer) / float64(applied) * 100
+	}
+
+	// Score distribution
+	buckets := [5]int{} // 0: 4.5-5.0, 1: 4.0-4.4, 2: 3.5-3.9, 3: 3.0-3.4, 4: <3.0
+	for _, app := range apps {
+		if app.Score <= 0 {
+			continue
+		}
+		switch {
+		case app.Score >= 4.5:
+			buckets[0]++
+		case app.Score >= 4.0:
+			buckets[1]++
+		case app.Score >= 3.5:
+			buckets[2]++
+		case app.Score >= 3.0:
+			buckets[3]++
+		default:
+			buckets[4]++
+		}
+	}
+	pm.ScoreBuckets = []model.ScoreBucket{
+		{Label: "4.5-5.0", Count: buckets[0]},
+		{Label: "4.0-4.4", Count: buckets[1]},
+		{Label: "3.5-3.9", Count: buckets[2]},
+		{Label: "3.0-3.4", Count: buckets[3]},
+		{Label: "  <3.0", Count: buckets[4]},
+	}
+
+	// Weekly activity: group by ISO week from Date field, show last 8 weeks.
+	weekCounts := make(map[string]int)
+	for _, app := range apps {
+		if app.Date == "" {
+			continue
+		}
+		t, err := time.Parse("2006-01-02", app.Date)
+		if err != nil {
+			continue
+		}
+		year, week := t.ISOWeek()
+		key := fmt.Sprintf("%d-W%02d", year, week)
+		weekCounts[key]++
+	}
+
+	// Sort weeks and take last 8
+	var weeks []string
+	for w := range weekCounts {
+		weeks = append(weeks, w)
+	}
+	sort.Strings(weeks)
+	if len(weeks) > 8 {
+		weeks = weeks[len(weeks)-8:]
+	}
+
+	for _, w := range weeks {
+		pm.WeeklyActivity = append(pm.WeeklyActivity, model.WeekActivity{
+			Week:  w,
+			Count: weekCounts[w],
+		})
+	}
+
+	return pm
+}
+
+// safePct returns the percentage of part/whole, or 0 if whole is 0.
+func safePct(part, whole int) float64 {
+	if whole == 0 {
+		return 0
+	}
+	return float64(part) / float64(whole) * 100
 }

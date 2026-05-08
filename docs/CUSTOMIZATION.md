@@ -11,9 +11,9 @@ Key sections:
 - **compensation**: Target range, minimum, currency
 - **location**: Country, timezone, visa status, on-site availability
 
-## Target Roles (modes/_shared.md)
+## Target Roles (modes/_profile.md)
 
-The archetype table in `_shared.md` determines how offers are scored and CVs are framed. Edit the table to match YOUR career targets:
+The archetype table in `_profile.md` determines how offers are scored and CVs are framed. Edit the table to match YOUR career targets:
 
 ```markdown
 | Archetype | Thematic axes | What they buy |
@@ -33,14 +33,14 @@ Copy from `templates/portals.example.yml` and customize:
 3. **search_queries**: WebSearch queries for job boards (Ashby, Greenhouse, Lever)
 4. **tracked_companies**: Companies to check directly
 
-## CV Template (templates/latex/)
+## CV Template (templates/cv-template.html)
 
-LaTeX templates for CV and cover letter generation:
-- **resume.cls**: Document class (layout, fonts, environments)
-- **cv-template.tex**: CV template with `<<PLACEHOLDER>>` tokens
-- **coverletter.tex**: Cover letter template with `<<PLACEHOLDER>>` tokens
+The HTML template uses these design tokens:
+- **Fonts**: Space Grotesk (headings) + DM Sans (body) -- self-hosted in `fonts/`
+- **Colors**: Cyan primary (`hsl(187,74%,32%)`) + Purple accent (`hsl(270,70%,45%)`)
+- **Layout**: Single-column, ATS-optimized
 
-To customize the design, edit `resume.cls` (layout/fonts) or the `.tex` templates (structure/placeholders).
+To customize fonts/colors, edit the CSS in the template. Update font files in `fonts/` if switching fonts.
 
 ## Negotiation Scripts (modes/_shared.md)
 
