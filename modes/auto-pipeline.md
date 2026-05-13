@@ -23,11 +23,22 @@ Ejecutar exactamente igual que el modo `oferta` (leer `modes/oferta.md` para tod
 Guardar la evaluación completa en `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` (ver formato en `modes/oferta.md`).
 Include Block G in the saved report. Add `**Legitimacy:** {tier}` to the report header.
 
-## Paso 3 — Generar PDF
+## Paso 3 — Generar PDF y Cover Letter (SIEMPRE)
+
+**RULE: Always generate both the CV PDF and the cover letter PDF, regardless of score.** The recommendation in the report (apply / SKIP) does NOT gate generation. The user maintains the apply / SKIP call on their side — the generation step always runs so the archive is complete and the user can revisit any role later without re-running the pipeline.
+
 Read `config/profile.yml`. Check `cv.output_format`:
 
 - If `"latex"`, execute the full pipeline from `modes/latex.md`
 - Otherwise (default), execute the full pipeline from `modes/pdf.md`
+
+Both artifacts land in `output/{###}-{company-slug}-{YYYY-MM-DD}/`:
+- `Alex_Martinez_CV_{Company}.pdf`
+- `Alex_Martinez_CoverLetter_{Company}.pdf`
+
+If a generation step fails, leave a note in the report header and continue — do not silently skip.
+
+**Recommendation logic is unchanged.** Continue to mark SKIP / Evaluated / Applied per score thresholds and continue to discourage applications below ~3.5/5 in the report body. The PDF is a tool, not a commitment to apply.
 
 ## Paso 4 — Draft Application Answers (solo si score >= 4.5)
 

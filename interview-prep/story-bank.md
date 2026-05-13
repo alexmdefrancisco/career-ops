@@ -13,6 +13,15 @@ This file accumulates your best interview stories over time. Each evaluation (Bl
 
 ## Stories
 
+### [Reliability Engineering] Invite Production Pipeline Ownership
+**Source:** Report #034 -- BKW Wind Energy Trading -- Junior Quant Developer
+**S (Situation):** Co-founded Invite at 21; had to keep a production analytics stack live for 100k+ users with no infra team.
+**T (Task):** Keep the BigQuery pipeline reliable while ingesting 2M+ daily events without losing analytics-driven decisions.
+**A (Action):** Built monitoring on row-counts and ETL latency; set alert thresholds; ran a weekly data quality review with the team.
+**R (Result):** Zero major data outages despite a 4-person team; KPIs became trustable enough to drive product decisions; 15% retention lift downstream.
+**Reflection:** Reliability is a culture, not a tool. The cheapest alerts (row counts, freshness) catch the biggest fraction of incidents.
+**Best for questions about:** reliability, monitoring, production systems, ownership, data quality, business-critical infra
+
 ### [Quantitative Skills] HFT Signal Builder
 **Source:** Report #001 -- TotalEnergies -- Trading Graduate Program
 **S (Situation):** EPFL ML for Finance course; had to predict 10-min intraday returns across 50+ US equities.

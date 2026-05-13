@@ -14,14 +14,19 @@ import (
 )
 
 var (
-	reReportLink     = regexp.MustCompile(`\[(\d+)\]\(([^)]+)\)`)
-	reScoreValue     = regexp.MustCompile(`(\d+\.?\d*)/5`)
-	reArchetype      = regexp.MustCompile(`(?i)\*\*Arquetipo(?:\s+detectado)?\*\*\s*\|\s*(.+)`)
-	reTlDr           = regexp.MustCompile(`(?i)\*\*TL;DR\*\*\s*\|\s*(.+)`)
+	reReportLink = regexp.MustCompile(`\[(\d+)\]\(([^)]+)\)`)
+	reScoreValue = regexp.MustCompile(`(\d+\.?\d*)/5`)
+	// Section A delimiter: "## A)", "## Block A", "## Bloque A", "## A:"
+	reSectionA = regexp.MustCompile(`(?ms)^##\s*(?:A\)|Block\s+A|Bloque\s+A|A:)[^\n]*\n(.*?)(?:\n##\s|\z)`)
+	// Table-row formats: `| [**]Field[**] | value |` (bold optional). Scoped to Section A.
+	// Accepts English (Archetype, Detected archetype) and Spanish (Arquetipo, Arquetipo detectado).
+	reArchetype = regexp.MustCompile(`(?im)^\s*\|\s*\*{0,2}\s*(?:Detected\s+[Aa]rchetype|Archetype|Arquetipo(?:\s+detectado)?)\s*\*{0,2}\s*\|\s*([^|]+?)\s*\|`)
+	reTlDr      = regexp.MustCompile(`(?im)^\s*\|\s*\*{0,2}\s*TL;DR\s*\*{0,2}\s*\|\s*([^|]+?)\s*\|`)
+	reRemote    = regexp.MustCompile(`(?im)^\s*\|\s*\*{0,2}\s*Remote\s*\*{0,2}\s*\|\s*([^|]+?)\s*\|`)
+	reComp      = regexp.MustCompile(`(?im)^\s*\|\s*\*{0,2}\s*Comp\s*\*{0,2}\s*\|\s*([^|]+?)\s*\|`)
+	// Colon-header formats: `**Field:** value` (sits above the table; searched on full text).
+	reArchetypeColon = regexp.MustCompile(`(?im)^\*\*(?:Archetype|Arquetipo)(?:\s+(?:[Dd]etected|detectado))?:\*\*\s*(.+)`)
 	reTlDrColon      = regexp.MustCompile(`(?i)\*\*TL;DR:\*\*\s*(.+)`)
-	reRemote         = regexp.MustCompile(`(?i)\*\*Remote\*\*\s*\|\s*(.+)`)
-	reComp           = regexp.MustCompile(`(?i)\*\*Comp\*\*\s*\|\s*(.+)`)
-	reArchetypeColon = regexp.MustCompile(`(?i)\*\*Arquetipo:\*\*\s*(.+)`)
 	reReportURL      = regexp.MustCompile(`(?m)^\*\*URL:\*\*\s*(https?://\S+)`)
 	reBatchID        = regexp.MustCompile(`(?m)^\*\*Batch ID:\*\*\s*(\d+)`)
 )
@@ -512,24 +517,31 @@ func LoadReportSummary(careerOpsPath, reportPath string) (archetype, tldr, remot
 	}
 	text := string(content)
 
-	if m := reArchetype.FindStringSubmatch(text); m != nil {
+	// Scope table-row lookups to Section A (Role Summary) to avoid hitting the
+	// Block C/F scoring tables, which also have `| Comp | 5/5 | ... |` rows.
+	sectionA := text
+	if m := reSectionA.FindStringSubmatch(text); m != nil {
+		sectionA = m[1]
+	}
+
+	if m := reArchetype.FindStringSubmatch(sectionA); m != nil {
 		archetype = cleanTableCell(m[1])
 	} else if m := reArchetypeColon.FindStringSubmatch(text); m != nil {
 		archetype = cleanTableCell(m[1])
 	}
 
 	// Try table-format TL;DR first (most reports), then colon format
-	if m := reTlDr.FindStringSubmatch(text); m != nil {
+	if m := reTlDr.FindStringSubmatch(sectionA); m != nil {
 		tldr = cleanTableCell(m[1])
 	} else if m := reTlDrColon.FindStringSubmatch(text); m != nil {
 		tldr = cleanTableCell(m[1])
 	}
 
-	if m := reRemote.FindStringSubmatch(text); m != nil {
+	if m := reRemote.FindStringSubmatch(sectionA); m != nil {
 		remote = cleanTableCell(m[1])
 	}
 
-	if m := reComp.FindStringSubmatch(text); m != nil {
+	if m := reComp.FindStringSubmatch(sectionA); m != nil {
 		comp = cleanTableCell(m[1])
 	}
 
