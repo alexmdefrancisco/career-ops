@@ -182,6 +182,64 @@ for (const e of entries) {
 }
 if (boldScores === 0) ok('No bold in scores');
 
+// --- Check 8: Required fields in every report ---
+// Header (first 1500 chars): Date, Archetype, Score, Legitimacy, URL, PDF.
+// TL;DR: required anywhere (the dashboard preview depends on it).
+// Section A table rows: Remote and Comp — the dashboard parser reads these from
+// the `| Field | value |` rows in Block A and has NO fallback for them. Missing
+// rows result in empty cells on the report card.
+const REQUIRED_HEADER_FIELDS = ['Date', 'Archetype', 'Score', 'Legitimacy', 'URL', 'PDF'];
+const REQUIRED_SECTION_A_ROWS = ['Remote', 'Comp'];
+
+function findHeaderField(text, name) {
+  const reColon = new RegExp(`^\\*\\*${name}:\\*\\*\\s*\\S`, 'im');
+  const reTable = new RegExp(`^\\*\\*${name}\\*\\*\\s*\\|\\s*\\S`, 'im');
+  return reColon.test(text) || reTable.test(text);
+}
+
+function findTLDR(text) {
+  return /\*\*TL;DR:\*\*\s*\S/i.test(text)
+    || /\*\*TL;DR\*\*\s*\|\s*\S/i.test(text)
+    || /^\|\s*TL;DR\s*\|\s*\S/im.test(text);
+}
+
+function extractSectionA(text) {
+  const start = text.search(/^##\s*(?:A\)|Block\s+A|Bloque\s+A|A:)/m);
+  if (start < 0) return '';
+  const rest = text.slice(start);
+  const nextIdx = rest.search(/\n##\s/);
+  return nextIdx < 0 ? rest : rest.slice(0, nextIdx);
+}
+
+function findSectionARow(sectionA, name) {
+  if (!sectionA) return false;
+  const re = new RegExp(`^\\s*\\|\\s*\\*{0,2}\\s*${name}\\s*\\*{0,2}\\s*\\|\\s*[^|]+\\|`, 'im');
+  return re.test(sectionA);
+}
+
+let badReports = 0;
+if (existsSync(REPORTS_DIR)) {
+  const reportFiles = readdirSync(REPORTS_DIR).filter(f => f.endsWith('.md'));
+  for (const file of reportFiles) {
+    const text = readFileSync(join(REPORTS_DIR, file), 'utf-8');
+    const head = text.slice(0, 1500);
+    const missing = [];
+    for (const field of REQUIRED_HEADER_FIELDS) {
+      if (!findHeaderField(head, field)) missing.push(field);
+    }
+    if (!findTLDR(text)) missing.push('TL;DR');
+    const sectionA = extractSectionA(text);
+    for (const row of REQUIRED_SECTION_A_ROWS) {
+      if (!findSectionARow(sectionA, row)) missing.push(`A:${row}`);
+    }
+    if (missing.length > 0) {
+      error(`Report ${file}: missing → ${missing.join(', ')}`);
+      badReports++;
+    }
+  }
+}
+if (badReports === 0) ok('All reports have required header fields and Section A rows');
+
 // --- Summary ---
 console.log('\n' + '='.repeat(50));
 console.log(`📊 Pipeline Health: ${errors} errors, ${warnings} warnings`);
