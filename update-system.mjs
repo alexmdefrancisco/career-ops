@@ -397,6 +397,9 @@ const USER_PATHS = [
   'opencode.json',
   '.claude/settings.json',
   '.claude/hooks/',
+  // Local customizations (this fork)
+  'generate-pdf-latex.mjs',
+  'launch',
 ];
 
 function parseVersionFile(raw) {
